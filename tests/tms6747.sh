@@ -39,6 +39,8 @@ if [ ! -x "$VM" ]; then
     exit 1
 fi
 if command -v clang >/dev/null 2>&1; then HOST=clang; else HOST=gcc; fi
+# The maths library is a library of its own on Linux and macOS; on Windows it is part of the CRT, and there is no m.lib.
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) LIBM= ;; *) LIBM=-lm ;; esac
 
 # One case by name, or all of them; a worker is handed the name it was asked for after --one.
 if [ "${1:-}" = --one ]; then only=$2; else only="${1:-}"; fi
@@ -55,7 +57,7 @@ one() {
     ( if "$CC1" -S -arch tms6747 "$src" -o "$OUT/$name.s" 2> "$OUT/$name.cc1.err"; then
           "$VM" "$OUT/$name.s" > "$OUT/$name.ours" 2>&1 < /dev/null; echo $? > "$OUT/$name.ours.rc"
       else echo refused > "$OUT/$name.ours.rc"; fi ) &
-    ( $HOST -w "$src" -o "$OUT/$name.ref" -lm 2> /dev/null
+    ( $HOST -w "$src" -o "$OUT/$name.ref" $LIBM 2> /dev/null
       "$OUT/$name.ref" > "$OUT/$name.theirs" 2>&1 < /dev/null; echo $? > "$OUT/$name.theirs.rc" ) &
     wait
     if [ "$(cat "$OUT/$name.ours.rc")" = refused ]; then
