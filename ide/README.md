@@ -1,6 +1,6 @@
 # IDE projects for cc1
 
-The same layout as Compiler-Cppi's `ide/`, file for file: two projects that
+The same layout as cpp11's (C++Optimize's) `ide/`, file for file: two projects that
 build the whole compiler, every path in them `..` and one more step. Nothing in
 the build depends on them - `make` and the suites are unchanged.
 

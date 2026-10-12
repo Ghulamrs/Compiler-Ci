@@ -18,7 +18,7 @@ set -u
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 CC1="${CC1:-$ROOT/c90.exe}"
-VM="${VM:-$ROOT/../Emulator/vm6747.exe}"
+VM="${VM:-$ROOT/../VM6747/vm6747.exe}"
 SRC="$ROOT/tests/cases"
 # The second leg's tools: each named, else where the sibling checkouts keep it, else on PATH.
 SIM="${SIM:-1}"
@@ -35,7 +35,7 @@ if [ "$RTSLIB" = rts6x.lib ]; then TIRTS="${TIRTS:-$ROOT/../../RTS6x/build}"; el
 OUT="$ROOT/tests/out-tms6747"
 
 if [ ! -x "$VM" ]; then
-    echo "tms6747.sh: no emulator at $VM - build VM6747/Emulator first"
+    echo "tms6747.sh: no emulator at $VM - build VM6747/ first"
     exit 1
 fi
 if command -v clang >/dev/null 2>&1; then HOST=clang; else HOST=gcc; fi

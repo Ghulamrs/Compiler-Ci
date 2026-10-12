@@ -17,7 +17,7 @@ set C90_TILIB=C:\Users\GRA\Documents\VM6747\tilib
 if not exist %BIN%\c90.exe (echo ti-link.cmd: no c90.exe in %BIN% & exit /b 1)
 if not exist %BIN%\asm6x.exe (echo ti-link.cmd: no asm6x.exe beside it & exit /b 1)
 if not exist %C90_TI%\bin\lnk6x.exe (echo ti-link.cmd: no lnk6x under %C90_TI% & exit /b 1)
-if not exist %C90_TILIB%\rts6740_elf_eh.lib (echo ti-link.cmd: no rts6740_elf_eh.lib - see Emulator/tests/ti.sh & exit /b 1)
+if not exist %C90_TILIB%\rts6740_elf_eh.lib (echo ti-link.cmd: no rts6740_elf_eh.lib - see VM6747/tests/ti.sh & exit /b 1)
 set OUT=%ROOT%\tests\out-ti-link
 if exist %OUT% rmdir /s /q %OUT%
 mkdir %OUT%
