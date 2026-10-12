@@ -10,7 +10,7 @@ set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
 CC1="${CC1:-$here/../../cc1.exe}"
-RT="${RT:-$here/../../../Compiler-S/runtime}"
+RT="${RT:-$here/../../../Compiler-Si/runtime}"
 
 [ -f "$RT/shmrt.h" ] || { echo "no $RT/shmrt.h - set RT to Compiler-S/runtime"; exit 2; }
 

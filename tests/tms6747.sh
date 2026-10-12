@@ -25,13 +25,13 @@ SIM="${SIM:-1}"
 find_tool() {
     for t in "$@"; do [ -n "$t" ] && [ -x "$t" ] && { echo "$t"; return; }; done
 }
-ASM6X=$(find_tool "${ASM6X:-}" "$ROOT/../../ASM6x/build/asm6x.exe" "$(command -v asm6x 2>/dev/null)")
-LNK6X=$(find_tool "${LNK6X:-}" "$ROOT/../../LNK6x/build/lnk6x.exe" "$(command -v lnk6x 2>/dev/null)")
-SIM6747=$(find_tool "${SIM6747:-}" "$ROOT/../../SIM6747/sim6747.exe" "$(command -v sim6747 2>/dev/null)")
+ASM6X=$(find_tool "${ASM6X:-}" "$ROOT/../ASM6x/build/asm6x.exe" "$(command -v asm6x 2>/dev/null)")
+LNK6X=$(find_tool "${LNK6X:-}" "$ROOT/../LNK6x/build/lnk6x.exe" "$(command -v lnk6x 2>/dev/null)")
+SIM6747=$(find_tool "${SIM6747:-}" "$ROOT/../SIM6747/sim6747.exe" "$(command -v sim6747 2>/dev/null)")
 # The run-time library: RTS6x's, built beside VM6747, since it passed the suite whole (M5, 2026-10-07);
 # TI's exception-handling rts6740 as RTSLIB=rts6740_elf_eh.lib, TIRTS its directory (default ~/c6747-lib).
 RTSLIB="${RTSLIB:-rts6x.lib}"
-if [ "$RTSLIB" = rts6x.lib ]; then TIRTS="${TIRTS:-$ROOT/../../RTS6x/build}"; else TIRTS="${TIRTS:-${C6747_EHLIB:-$HOME/c6747-lib}}"; fi
+if [ "$RTSLIB" = rts6x.lib ]; then TIRTS="${TIRTS:-$ROOT/../RTS6x/build}"; else TIRTS="${TIRTS:-${C6747_EHLIB:-$HOME/c6747-lib}}"; fi
 OUT="$ROOT/tests/out-tms6747"
 
 if [ ! -x "$VM" ]; then
