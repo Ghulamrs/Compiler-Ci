@@ -46,13 +46,16 @@ case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) LIBM= ;; *) LIBM=-lm ;; esac
 if [ "${1:-}" = --one ]; then only=$2; else only="${1:-}"; fi
 # The cases whose reference needs a 64-bit long or pointer - see the file.
 LP64="$ROOT/tests/tms6747-lp64.txt"
+# On a Windows host, the cases whose reference the Microsoft CRT cannot give - see the file.
+MSVCREF=/dev/null
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) MSVCREF="$ROOT/tests/tms6747-msvc.txt" ;; esac
 
 # One case, its report and verdict written beside its output. c90 and the emulator on one side,
 # the host compiler and its native run on the other - the program under test and the reference
 # at once - and the cases themselves JOBS at a time.
 one() {
     name=$1; src="$SRC/$name.c"
-    if [ -z "$only" ] && grep -q "^$name[[:space:]]" "$LP64"; then echo skip > "$OUT/$name.verdict"; return; fi
+    if [ -z "$only" ] && { grep -q "^$name[[:space:]]" "$LP64" || grep -q "^$name[[:space:]]" "$MSVCREF"; }; then echo skip > "$OUT/$name.verdict"; return; fi
     expect=$(sed -n 's|^// expect: *||p' "$src" | head -1)
     ( if "$CC1" -S -arch tms6747 "$src" -o "$OUT/$name.s" 2> "$OUT/$name.cc1.err"; then
           "$VM" "$OUT/$name.s" > "$OUT/$name.ours" 2>&1 < /dev/null; echo $? > "$OUT/$name.ours.rc"
@@ -130,7 +133,9 @@ count() { cat "$OUT"/*.verdict 2>/dev/null | grep -cx "$1" || true; }
 pass=$(count pass); fail=$(count fail); skip=$(count skip)
 
 echo
-echo "tms6747  PASS: $pass   FAIL: $fail   SKIP: $skip (need a 64-bit long or pointer - tests/tms6747-lp64.txt)"
+why="need a 64-bit long or pointer - tests/tms6747-lp64.txt"
+[ "$MSVCREF" = /dev/null ] || why="$why; or a reference Windows' CRT cannot give - tests/tms6747-msvc.txt"
+echo "tms6747  PASS: $pass   FAIL: $fail   SKIP: $skip ($why)"
 if [ "$SIM" = 1 ]; then
     if [ "$RTSLIB" = rts6x.lib ]; then echo "tms6747  every PASS also on sim6747 (asm6x, lnk6x, $RTSLIB)"
     else echo "tms6747  every PASS also on sim6747 (asm6x, lnk6x, $RTSLIB) but those in tests/tms6747-sim.txt"; fi
