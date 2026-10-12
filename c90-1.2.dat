@@ -1,5 +1,5 @@
 ©2026 G. R. Akhtar - ISO C 90
-Release seal, version 1.2, sealed 08-10-2026
+Release seal, version 1.2, sealed 13-10-2026
 Written by tools/seal; check it with `tools/seal check`.
 CRC32  size  file - 54 files, seal 8D82BAA5
 ------------------------------------------------------------------
@@ -58,4 +58,4 @@ C29D3444      6795  src/backend/Tms6747.h
 3C4167CA      1346  src/backend/X86_64Windows.h
 2D5FF95D      1133  src/main.cpp
 ------------------------------------------------------------------
-Sealed on 08-10-2026
+Sealed on 13-10-2026
