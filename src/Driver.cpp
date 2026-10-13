@@ -822,6 +822,11 @@ bool Driver::parseArguments(int argc, char **argv) {
         }
     }
 
+    if (debug_ && optimize_ > 0 && std::strcmp(backend_->name(), "tms6747") == 0) {
+        std::fprintf(stderr, "%s: -g with -O is not supported yet for tms6747 - a line position is written at -O0 alone, "
+                             "as cpp11 writes it; compile with -g alone\n", argv[0]);
+        return false;
+    }
     if (debug_ && !backend_->emitsLineTable()) {
         std::fprintf(stderr,
                      "%s: -g asks where each line of C went, and this compiler "
