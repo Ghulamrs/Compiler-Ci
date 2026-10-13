@@ -1,0 +1,23 @@
+echo <<ride-done>>\n
+break step.c:18
+break step.c:5
+run < /dev/null
+echo <<ride-done>>\n
+step
+backtrace
+step
+step
+step
+backtrace
+finish
+finish
+next
+next
+next
+print $A4
+info locals
+delete
+continue
+backtrace
+continue
+quit

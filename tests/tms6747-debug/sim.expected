@@ -1,0 +1,44 @@
+<<ride-done>>
+Breakpoint 1 at 0xc0106e1c: file step.c, line 18.
+Breakpoint 2 at 0xc0106ca4: file step.c, line 5.
+Starting program: step.out
+
+Breakpoint 1, main () at step.c:18
+18	    int x = add(1, 2);
+<<ride-done>>
+add () at step.c:11
+11	    int c = a + b;
+#0  add () at step.c:11
+#1  0xc0106e4e in main () at step.c:18
+#2  0xc0106c20 in _ZN5rts6x7Startup3runEv ()
+#3  0xc0106c54 in __rts6x_start ()
+12	    c = twice(c);
+
+Breakpoint 2, twice () at step.c:5
+5	    int r = n * 2;
+6	    return r;
+#0  twice () at step.c:6
+#1  0xc0106db2 in add () at step.c:12
+#2  0xc0106e4e in main () at step.c:18
+#3  0xc0106c20 in _ZN5rts6x7Startup3runEv ()
+#4  0xc0106c54 in __rts6x_start ()
+Run till exit from #0  twice () at step.c:6
+0xc0106db2 in add () at step.c:12
+12	    c = twice(c);
+Run till exit from #0  add () at step.c:12
+0xc0106e4e in main () at step.c:18
+18	    int x = add(1, 2);
+19	    printf("x=%d\n", x);
+x=6
+20	    int y = add(x, 4);
+
+Breakpoint 2, twice () at step.c:5
+5	    int r = n * 2;
+$1 = 10
+No symbol table info available.
+Continuing.
+y=20
+[Inferior 1 (process 1) exited with code 06]
+No stack.
+The program is not being run.
+exit 6
