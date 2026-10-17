@@ -137,5 +137,12 @@ private:
     void emitGlobal(const Global &g, Segment seg);
     void emitData(const Program &program);
     void emitParams(const Function &fn);
+    void emitVariables(const Function &fn);
+    void emitScope(const Function &fn, int scope);
+    bool declaresAnything(const Function &fn, int scope) const;
     void emitFunction(const Function &fn);
+    // -g: every type a variable names, described once at the file's end (emitTypes) for the debugger
+    std::vector<const Type *> debugTypes_;
+    void noteType(const Type *t);
+    void emitTypes();
 };

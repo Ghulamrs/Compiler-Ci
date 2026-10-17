@@ -1176,6 +1176,102 @@ unsigned Tms6747::unwindWord(bool needFrame) const {
     return 0x83000000u | (needFrame ? 0x7fu << 17 : 0u) | (mask << 4) | 7u;
 }
 
+// -g: a type's name for the debugger, an array's bounds in C's order - int [2][3], where describe() reads
+// the nesting inside out (int [3] [2]); every other type as describe() spells it.
+static std::string debugName(const Type *t) {
+    if (!t->isArray()) return t->describe();
+    std::string dims;
+    const Type *e = t;
+    for (; e->isArray(); e = e->pointee()) dims += "[" + std::to_string(e->length()) + "]";
+    return debugName(e) + " " + dims;
+}
+
+// -g: the function's parameters and locals in TI's .dwtag spelling, so sim6747 and vm6747 can show them
+// (docs\C6747-LOCALS-DESIGN.md). A frame variable is named from A15 - TI's DWARF register 15 - as
+// localAddr reaches it; a static one by its symbol. Parameters first, in order, as the CodeView path does.
+// A variable of an inner block goes inside that block's DW_TAG_lexical_block, which names the block's
+// code by its begin and end label (phase F): the debugger lists it only while the stop is inside.
+void Tms6747::emitVariables(const Function &fn) {
+    if (lineSource() == nullptr) return;
+    out_ << "\t.dwtag\tDW_TAG_subprogram, DW_AT_name(\"" << fn.name() << "\"), DW_AT_low_pc(" << fn.name() << ")\n";
+    emitScope(fn, 0);
+    out_ << "\t.dwendtag\n";
+}
+
+// a block's own variables (the function's, scope 0, parameters first), then each inner block that declares
+// something: as a lexical block when it has code of its own, else folded into this one
+void Tms6747::emitScope(const Function &fn, int scope) {
+    for (int pass = 0; pass < 2; pass++)
+        for (const Local &l : fn.locals()) {
+            if (l.scope != scope || l.isParam != (pass == 0) || l.name.empty()) continue;
+            out_ << "\t.dwtag\t" << (l.isParam ? "DW_TAG_formal_parameter" : "DW_TAG_variable")
+                 << ", DW_AT_name(\"" << l.name << "\"), DW_AT_type(\"" << debugName(l.type) << "\"), ";
+            if (!l.staticName.empty()) out_ << "DW_AT_location[DW_OP_addr " << l.staticName << "]\n";
+            else out_ << "DW_AT_location[DW_OP_breg15 " << -(kSaveBytes + l.offset) << "]\n";
+            noteType(l.type);
+        }
+    const std::vector<DwarfBlock> &bs = blocks();
+    for (std::size_t b = 1; b < bs.size(); b++) {
+        if (bs[b].parent != scope || !declaresAnything(fn, static_cast<int>(b))) continue;
+        if (bs[b].begin.empty() || bs[b].end.empty()) { emitScope(fn, static_cast<int>(b)); continue; }
+        out_ << "\t.dwtag\tDW_TAG_lexical_block, DW_AT_low_pc(" << bs[b].begin << "), DW_AT_high_pc(" << bs[b].end << ")\n";
+        emitScope(fn, static_cast<int>(b));
+        out_ << "\t.dwendtag\n";
+    }
+}
+
+bool Tms6747::declaresAnything(const Function &fn, int scope) const {
+    for (const Local &l : fn.locals()) if (l.scope == scope && !l.name.empty()) return true;
+    const std::vector<DwarfBlock> &bs = blocks();
+    for (std::size_t b = 1; b < bs.size(); b++)
+        if (bs[b].parent == scope && declaresAnything(fn, static_cast<int>(b))) return true;
+    return false;
+}
+
+// A type and every type it is made of, each once: an array's element, a member's type, what a pointer points to.
+void Tms6747::noteType(const Type *t) {
+    if (t == nullptr || t->isFunction() || t->isVoid()) return;
+    for (const Type *seen : debugTypes_) if (seen == t) return;
+    debugTypes_.push_back(t);
+    if (t->isPointer() || t->isArray()) noteType(t->pointee());
+    if (t->isStructOrUnion()) for (const Member &m : t->members()) noteType(m.type);
+}
+
+// -g: the types, named as the variables' DW_AT_type names them, each closed by .dwendtag: a base type's size
+// and encoding, a pointer's size, an array's element and bound, a struct's or union's members at their
+// offsets (a bit-field is left out). The simulators' debugger prints a value from these.
+void Tms6747::emitTypes() {
+    if (lineSource() == nullptr) return;
+    std::ostringstream o;
+    for (const Type *t : debugTypes_) {
+        const std::string name = debugName(t);
+        const int size = t->isComplete() ? t->size(target_) : 0;
+        if (t->isPointer()) {
+            o << "\t.dwtag\tDW_TAG_pointer_type, DW_AT_name(\"" << name << "\"), DW_AT_type(\"" << (t->pointee()->isFunction() ? std::string("void") : debugName(t->pointee()))
+              << "\"), DW_AT_byte_size(" << size << ")\n";
+        } else if (t->isArray()) {
+            o << "\t.dwtag\tDW_TAG_array_type, DW_AT_name(\"" << name << "\"), DW_AT_type(\"" << debugName(t->pointee())
+              << "\"), DW_AT_upper_bound(" << (t->length() - 1) << "), DW_AT_byte_size(" << size << ")\n";
+        } else if (t->isStructOrUnion()) {
+            o << "\t.dwtag\t" << (t->kind() == Kind::Union ? "DW_TAG_union_type" : "DW_TAG_structure_type") << ", DW_AT_name(\"" << name
+              << "\"), DW_AT_byte_size(" << size << ")\n";
+            for (const Member &m : t->members())
+                if (!m.isBitField() && !m.name.empty())
+                    o << "\t.dwtag\tDW_TAG_member, DW_AT_name(\"" << m.name << "\"), DW_AT_type(\"" << debugName(m.type)
+                      << "\"), DW_AT_data_member_location(" << m.offset << ")\n";
+        } else {
+            const char *enc = t->isFloating() ? "DW_ATE_float"
+                            : t->kind() == Kind::Char || t->kind() == Kind::SChar ? "DW_ATE_signed_char"
+                            : t->kind() == Kind::UChar ? "DW_ATE_unsigned_char"
+                            : (t->kind() == Kind::UShort || t->kind() == Kind::UInt || t->kind() == Kind::ULong || t->kind() == Kind::ULongLong) ? "DW_ATE_unsigned"
+                            : "DW_ATE_signed";
+            o << "\t.dwtag\tDW_TAG_base_type, DW_AT_name(\"" << name << "\"), DW_AT_byte_size(" << size << "), DW_AT_encoding(" << enc << ")\n";
+        }
+        o << "\t.dwendtag\n";
+    }
+    file_ += o.str();
+}
+
 void Tms6747::emitFunction(const Function &fn) {
     resetLabels();
     functionName_ = fn.name();
@@ -1199,6 +1295,8 @@ void Tms6747::emitFunction(const Function &fn) {
         vaStart_ = (stackParamOffset(fn.params(), named) + 3) / 4 * 4;   // a word past a packed char
     }
 
+    // -g: each block's begin and end label, so its variables can be tagged with the code they live in
+    if (lineSource() != nullptr) resetBlocks(fn.blocks());
     // The body goes first, into its own text, because what it does decides the prologue: B3 saved for a call, A10/B10/A12/B12 for one past six arguments.
     fn.body().accept(*this);
     // Falling off the end returns 0 - main's C99 meaning, and what the other
@@ -1223,6 +1321,7 @@ void Tms6747::emitFunction(const Function &fn) {
     if (!fn.isStatic()) out_ << "\t.global " << fn.name() << "\n";
     out_ << fn.name() << ":\n";
     markLine(fn.pos());                                   // -g: the function's own line, as cl6x's first .dwpsn names it
+    emitVariables(fn);
 
     int frame = align8(fn.frameSize());
     bool needFrame = frame > 0 || hasCall_ || !fn.params().empty() || sretSlot_ != 0;
@@ -1260,6 +1359,7 @@ void Tms6747::run(const Program &program) {
     file_ += out_.str();
     out_.str(std::string());
     for (const Function &fn : program.functions) emitFunction(fn);
+    emitTypes();
     // The personality routine the index entries name by number, which the
     // linker cannot otherwise see them need.
     if (!program.functions.empty())

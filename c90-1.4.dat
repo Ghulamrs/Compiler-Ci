@@ -1,7 +1,7 @@
 ©2026 G. R. Akhtar - ISO C 90
-Release seal, version 1.3, sealed 13-10-2026
+Release seal, version 1.4, sealed 17-10-2026
 Written by tools/seal; check it with `tools/seal check`.
-CRC32  size  file - 54 files, seal 10812ECC
+CRC32  size  file - 54 files, seal 33EC3AED
 ------------------------------------------------------------------
 65B6BFC3      2538  lib/assert.h
 978C1DCB      1245  lib/ctype.h
@@ -21,7 +21,7 @@ F4D14491      2432  lib/stdlib.h
 D822292C      3007  lib/time.h
 8C8B02D6      1547  msvc/compat/unistd.h
 10B0A19F     16904  src/Ast.h
-0B49DAF7     42830  src/Driver.cpp
+A24977D5     42830  src/Driver.cpp
 A5880F47      2739  src/Driver.h
 1424D482      8857  src/Lexer.cpp
 779AEACA       994  src/Lexer.h
@@ -48,8 +48,8 @@ FE043B76     62191  src/backend/Optimizer.cpp
 99800A52      7494  src/backend/Optimizer.h
 F0EC5E93      7152  src/backend/Spelling.cpp
 E9611B37      7200  src/backend/Spelling.h
-4BE991AB     58236  src/backend/Tms6747.cpp
-8B19F584      7016  src/backend/Tms6747.h
+804A2E13     64203  src/backend/Tms6747.cpp
+ABC32057      7376  src/backend/Tms6747.h
 32902DD9      6110  src/backend/Walker.cpp
 43EF5CFD      2876  src/backend/Walker.h
 3D6D6234     54375  src/backend/X86_64Linux.cpp
@@ -58,4 +58,4 @@ E9611B37      7200  src/backend/Spelling.h
 3C4167CA      1346  src/backend/X86_64Windows.h
 2D5FF95D      1133  src/main.cpp
 ------------------------------------------------------------------
-Sealed on 13-10-2026
+Sealed on 17-10-2026
